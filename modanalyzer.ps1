@@ -238,11 +238,11 @@ if ($unknownMods.Count -gt 0) {
 	}
 }
 
-# Determina il percorso del file di output nella stessa cartella dei mod
+# Determina il percorso del file di output
 $outputPath = Join-Path (Split-Path $mods -Parent) "Mod_Scan_Report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 
 # -------------------------------
-# Generazione e salvataggio dell'output (Corretto per evitare ParserError)
+# Generazione e salvataggio dell'output (Corretto con Set-Content/Add-Content)
 # -------------------------------
 
 # Inizializza il file con l'intestazione
