@@ -29,57 +29,6 @@ if (-not (Test-Path $mods -PathType Container)) {
     exit 1
 }
 
-# ---------------------------
-# Minecraft java/javaw uptime
-# ---------------------------
-
-$process = Get-Process javaw -ErrorAction SilentlyContinue
-if (-not $process) {
-    $process = Get-Process java -ErrorAction SilentlyContinue
-}
-
-if ($process) {
-    try {
-        $startTime = $process.StartTime
-        $elapsedTime = (Get-Date) - $startTime
-    } catch {}
-
-    Write-Host "{ Minecraft Uptime }" -ForegroundColor DarkCyan
-    Write-Host "$($process.Name) PID $($process.Id) started at $startTime and running for $($elapsedTime.Hours)h $($elapsedTime.Minutes)m $($elapsedTime.Seconds)s"
-    Write-Host ""
-}
-
-# ----------------------------------------
-# Java -jar Process Scanner (SystemInformer)
-# ----------------------------------------
-
-function Find-JavaJarProcesses {
-    Write-Host "{ Java -jar Process Scanner }" -ForegroundColor DarkCyan
-
-    # Regex SUPER-GENERICA per catturare 'java' o 'javaw' seguita da '-jar'
-    # Risolve i problemi di rilevamento dovuti a percorsi/apici/argomenti VM.
-    $pattern = 'java(?:w)?.*? -jar .*'
-
-    $procs = Get-CimInstance Win32_Process |
-        Where-Object { $_.CommandLine -match $pattern }
-
-    if (-not $procs) {
-        Write-Host "Nessun processo trovato con -jar" -ForegroundColor DarkGray
-        Write-Host
-        return
-    }
-
-    foreach ($p in $procs) {
-        Write-Host "> PID $($p.ProcessId)" -ForegroundColor Yellow -NoNewline
-        Write-Host "  $($p.CommandLine)" -ForegroundColor Gray
-    }
-
-    Write-Host
-}
-
-Find-JavaJarProcesses
-
-
 # -------------------------------
 # Utility functions
 # -------------------------------
@@ -237,7 +186,6 @@ if ($unknownMods.Count -gt 0) {
 		New-Item -ItemType Directory -Path $tempDir | Out-Null
 		Add-Type -AssemblyName System.IO.Compression.FileSystem
 	
-		# Creiamo un array per tenere traccia dei mod da rimuovere (quelli che risultano cheat)
 		$modsToRemove = @()
 		
 		foreach ($mod in $unknownMods) {
@@ -245,7 +193,6 @@ if ($unknownMods.Count -gt 0) {
 			$spin = $spinner[$counter % $spinner.Length]
 			Write-Host "`r[$spin] Scanning unknown mods for cheat strings ($counter / $($unknownMods.Count))..." -ForegroundColor Yellow -NoNewline
 			
-			# Controlla il file .jar principale
 			$modStrings = Check-Strings $mod.FilePath
 			if ($modStrings.Count -gt 0) {
 				$modsToRemove += $mod.FileName
@@ -253,17 +200,14 @@ if ($unknownMods.Count -gt 0) {
 				continue
 			}
 			
-			# Estrai e controlla i jar interni (dependencies)
 			$fileNameWithoutExt = [System.IO.Path]::GetFileNameWithoutExtension($mod.FileName)
 			$extractPath = Join-Path $tempDir $fileNameWithoutExt
 			
 			if (-not (Test-Path $extractPath)) {
 				New-Item -ItemType Directory -Path $extractPath | Out-Null
-				# L'estrazione potrebbe fallire se il file non è uno zip ben formato
 				try {
 					[System.IO.Compression.ZipFile]::ExtractToDirectory($mod.FilePath, $extractPath)
 				} catch {
-					# Se l'estrazione fallisce, andiamo avanti al mod successivo
 					Remove-Item -Recurse -Force $extractPath -ErrorAction SilentlyContinue
 					continue
 				}
@@ -280,12 +224,11 @@ if ($unknownMods.Count -gt 0) {
 				if ($depStrings.Count -gt 0) {
 					$modsToRemove += $mod.FileName
 					$cheatMods += [PSCustomObject]@{ FileName = $mod.FileName; DepFileName = $jar.Name; StringsFound = $depStrings }
-					break # Passa al mod successivo
+					break
 				}
 			}
 		}
 		
-		# Rimuovi i mod identificati come cheat dall'array $unknownMods
 		$unknownMods = $unknownMods | Where-Object { $_.FileName -notin $modsToRemove }
 
 	} catch {
