@@ -29,10 +29,6 @@ if (-not (Test-Path $mods -PathType Container)) {
     exit 1
 }
 
-# -------------------------------
-# Utility functions
-# -------------------------------
-
 function Get-SHA1 {
     param (
         [string]$filePath
@@ -82,16 +78,11 @@ function Fetch-Megabase {
     return $null
 }
 
-# -------------------------------
-# Cheat string detector
-# -------------------------------
-
 $cheatStrings = @(
 	"AimAssist",
 	"AnchorTweaks",
 	"AutoAnchor",
 	"AutoCrystal",
-	"AutoAnchor",
 	"AutoDoubleHand",
 	"AutoHitCrystal",
 	"AutoPot",
@@ -108,9 +99,65 @@ $cheatStrings = @(
 	"Velocity",
 	"AxeSpam",
 	"WebMacro",
-	"SelfDestruct",
-	"FastPlace"
-)
+	"FastPlace",
+    "Dysplays Hud",
+    "Switch Back",
+    "Double Glowstone",
+    "Height Expansion",
+    "Width Expansion",
+    "throw delay",
+    "Vertical Speed",
+    "Horizontal Speed",
+    "Speed Delay",
+    "Donut SMP Bypass",
+    "Auto shield breaker",
+    "Crystal optimizer",
+    "Auto loot",
+    "Anchor Placer",
+    "Stop on Kill",
+    "AutoInventoryTotem",
+    "Autoclicker",
+    "blatant mode",
+    "Delete USN Journal",
+    "Only Crit Sword",
+    "Only Crit Axe",
+    "Equip Delay",
+    "Generic Selfdestruct",
+    "hit delay",
+    "Disable Shields",
+    "Generic disable shield",
+    "No Miss Delay",
+    "Generic Crystal Optimizer",
+    "Auto WTap",
+    "Auto Pot Refill",
+    "Auto Jump Reset",
+    "Auto Switch",
+    "X-Ray",
+    "Anti SS Tool",
+    "Fake Lag",
+    "Attack Players",
+    "Netherite Finder",
+    "Illegal Modifications",
+    "String Cleaner",
+    "Autoretotem",
+    "ClickAimassist",
+    "Possible Destruct",
+    "Syracruse Client",
+    "Anchor macro",
+    "Macro anchor",
+    "Cw Crystal",
+    "Attack Delay",
+    "Switch Delay",
+    "Attack invisibles",
+    "Speed Multiplier",
+    "Sword Delay",
+    "Axe Delay",
+    "Click Simulation",
+    "Sticky Aim",
+    "Generic Shieldbreaker",
+    "Generic autoanchor",
+    "CrystalAura"
+) | Select-Object -Unique
 
 function Check-Strings {
 	param (
@@ -129,10 +176,6 @@ function Check-Strings {
 	
 	return $stringsFound
 }
-
-# -------------------------------
-# Mod scanning
-# -------------------------------
 
 $verifiedMods = @()
 $unknownMods = @()
@@ -166,10 +209,6 @@ foreach ($file in $jarFiles) {
 	$zoneId = Get-ZoneIdentifier $file.FullName
 	$unknownMods += [PSCustomObject]@{ FileName = $file.Name; FilePath = $file.FullName; ZoneId = $zoneId }
 }
-
-# -------------------------------
-# Scan unknown mods for cheats
-# -------------------------------
 
 if ($unknownMods.Count -gt 0) {
 	$tempDir = Join-Path $env:TEMP "habibimodanalyzer"
@@ -238,14 +277,14 @@ if ($unknownMods.Count -gt 0) {
 	}
 }
 
-# Determina il percorso del file di output
-$outputPath = Join-Path (Split-Path $mods -Parent) "Mod_Scan_Report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
+$desktopPath = [System.Environment]::GetFolderPath([System.Environment+SpecialFolder]::Desktop)
+$reportFolder = Join-Path $desktopPath "ModAnalyzer_Reports"
+if (-not (Test-Path $reportFolder)) {
+    New-Item -Path $reportFolder -ItemType Directory | Out-Null
+}
 
-# -------------------------------
-# Generazione e salvataggio dell'output (SINTASSI CORRETTA)
-# -------------------------------
+$outputPath = Join-Path $reportFolder "Mod_Scan_Report_$(Get-Date -Format 'yyyyMMdd_HHmmss').txt"
 
-# Inizializza il file con l'intestazione
 Set-Content $outputPath "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') - Mod Scan Report" -Encoding UTF8
 Add-Content $outputPath "==========================================================="
 Add-Content $outputPath ""
@@ -286,9 +325,9 @@ if ($cheatMods.Count -gt 0) {
     Add-Content $outputPath ""
 }
 
-# Visualizza un riepilogo e il percorso di salvataggio
 Write-Host "`r$(' ' * 80)`r" -NoNewline
-Write-Host "✅ Scansione completata." -ForegroundColor Green
+Write-Host "Scansione completata." -ForegroundColor Green
 Write-Host "Il rapporto è stato salvato in:" -ForegroundColor Green -NoNewline
-Write-Host " $outputPath" -ForegroundColor White
+Write-Host " $reportFolder" -ForegroundColor White
+Write-Host "└─ $outputPath" -ForegroundColor DarkGray
 Write-Host
